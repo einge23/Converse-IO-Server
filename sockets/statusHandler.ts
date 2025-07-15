@@ -47,23 +47,12 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
             return;
         }
 
-        if (!userId || !token) {
-            throw new Error("Token is required.");
+        if (!userId) {
+            throw new Error("UserId is required.");
         }
 
         try {
-            console.log(`API sync: Status for ${userId} set to ${status}`);
-
-            const response = await updateStatus(userId, token, status);
-
-            if (!response.ok) {
-                throw new Error(
-                    `API call failed with status: ${response.status}`
-                );
-            }
-
             io.to(`status:${userId}`).emit("status:update", { userId, status });
-            console.log(`Broadcasted '${status}' status for user ${userId}`);
         } catch (error) {
             console.error(`Failed to set status for user ${userId}:`, error);
             socket.emit("error", {

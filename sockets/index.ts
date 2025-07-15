@@ -15,9 +15,7 @@ export function onConnection(io: IoServer) {
         }
         console.log(`User connected: ${userId} (Socket ID: ${socket.id})`);
 
-        // Register all handlers for this socket
         registerDmHandlers(io, socket);
-        // You can add other handlers like registerStatusHandlers(io, socket) here
 
         socket.on("disconnect", () => {
             console.log(
