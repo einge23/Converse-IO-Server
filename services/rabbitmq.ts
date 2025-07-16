@@ -1,6 +1,6 @@
 import amqp, { Channel } from "amqplib";
 import { Message } from "../types";
-const RABBITMQ_URL = process.env.RABBITMQ_URL!;
+
 const EXCHANGE = "chat.exchange";
 const ROUTING_KEY = "chat.message";
 
@@ -8,7 +8,7 @@ let channel: Channel;
 
 export async function connectRabbitMQ(): Promise<Channel> {
     try {
-        console.log("Attempting to connect to RabbitMQ...");
+        const RABBITMQ_URL = process.env.RABBITMQ_URL!;
         const conn = await amqp.connect(RABBITMQ_URL);
         console.log("Successfully connected to RabbitMQ");
 

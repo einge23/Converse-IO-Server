@@ -1,5 +1,6 @@
 import { Server as IoServer, Socket } from "socket.io";
 import { registerDmHandlers } from "./dmHandler";
+import { registerStatusHandlers } from "./statusHandler";
 
 export function onConnection(io: IoServer) {
     io.on("connection", (socket: Socket) => {
@@ -16,6 +17,7 @@ export function onConnection(io: IoServer) {
         console.log(`User connected: ${userId} (Socket ID: ${socket.id})`);
 
         registerDmHandlers(io, socket);
+        registerStatusHandlers(io, socket);
 
         socket.on("disconnect", () => {
             console.log(

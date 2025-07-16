@@ -1,16 +1,16 @@
 import { Server as IoServer, Socket } from "socket.io";
 import { UserStatus, UserStatuses } from "../types";
-import { updateStatus } from "../api/apiSync";
+import { StatusService } from "../services/statusService";
 
-interface SocketAuth {
-    token?: string;
+export interface SocketAuth {
     userId: string;
 }
 
 export function registerStatusHandlers(io: IoServer, socket: Socket) {
-    const { userId, token } = socket.handshake.auth as SocketAuth;
+    const { userId } = socket.handshake.auth as SocketAuth;
 
-    setTimeout(() => {
+    setTimeout(async () => {
+        await StatusService.setUserStatus(userId, "online");
         io.to(`status:${userId}`).emit("status:update", {
             userId,
             status: "online",
@@ -32,6 +32,13 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
                 `User ${userId} subscribed to status updates for ${friendId}`
             );
         }
+
+        const statuses = StatusService.getUserStatuses(friendIds);
+        for(const [friendId, status] of Object.entries(statuses)) {
+            if (status) {
+                socket.emit("status:update", { userId: friendId, status });
+            }
+        }
     });
 
     socket.on("status:set", async (data: { status: UserStatus }) => {
@@ -52,6 +59,7 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
         }
 
         try {
+            await StatusService.setUserStatus(userId, status);
             io.to(`status:${userId}`).emit("status:update", { userId, status });
         } catch (error) {
             console.error(`Failed to set status for user ${userId}:`, error);
@@ -60,5 +68,14 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
                 message: "Failed to update status.",
             });
         }
+    });
+
+    socket.on("disconnect", async () => {
+        await StatusService.removeUserStatus(userId);
+        io.to(`status:${userId}`).emit("status:update", {
+            userId,
+            status: "offline",
+        });
+        console.log(`Broadcasted 'offline' status for user ${userId}`);
     });
 }
