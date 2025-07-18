@@ -34,7 +34,7 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
         }
 
         const statuses = StatusService.getUserStatuses(friendIds);
-        for(const [friendId, status] of Object.entries(statuses)) {
+        for (const [friendId, status] of Object.entries(statuses)) {
             if (status) {
                 socket.emit("status:update", { userId: friendId, status });
             }
@@ -67,6 +67,24 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
                 type: "server_error",
                 message: "Failed to update status.",
             });
+        }
+    });
+
+    socket.on("user:logout", async () => {
+        try {
+            await StatusService.removeUserStatus(userId);
+            io.to(`status:${userId}`).emit("status:update", {
+                userId,
+                status: "offline",
+            });
+            console.log(
+                `User ${userId} logged out - status removed from Redis`
+            );
+        } catch (error) {
+            console.error(
+                `Failed to remove status for user ${userId} on logout:`,
+                error
+            );
         }
     });
 
