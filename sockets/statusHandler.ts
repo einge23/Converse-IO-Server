@@ -18,7 +18,7 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
         console.log(`Broadcasted 'online' status for user ${userId}`);
     }, 500);
 
-    socket.on("status:subscribe", (friendIds: string[]) => {
+    socket.on("status:subscribe", async (friendIds: string[]) => {
         if (!Array.isArray(friendIds)) {
             socket.emit("error", {
                 type: "validation_error",
@@ -26,11 +26,29 @@ export function registerStatusHandlers(io: IoServer, socket: Socket) {
             });
             return;
         }
+
+        socket.join(`status:${userId}`);
+
         for (const friendId of friendIds) {
             socket.join(`status:${friendId}`);
-            console.log(
-                `User ${userId} subscribed to status updates for ${friendId}`
+
+            const friendSocket = Array.from(io.sockets.sockets.values()).find(
+                (s) => s.handshake.auth.userId === friendId
             );
+
+            if (friendSocket) {
+                friendSocket.join(`status:${userId}`);
+
+                const currentUserStatus = await StatusService.getUserStatus(
+                    userId
+                );
+                if (currentUserStatus) {
+                    friendSocket.emit("status:update", {
+                        userId,
+                        status: currentUserStatus,
+                    });
+                }
+            }
         }
 
         const statuses = StatusService.getUserStatuses(friendIds);
