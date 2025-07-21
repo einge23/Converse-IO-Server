@@ -41,6 +41,7 @@ export function registerDmHandlers(io: IoServer, socket: Socket) {
             created_at: now,
             updated_at: now,
             deleted_at: null,
+            attachments: msg.attachments,
         };
 
         publishMessage(payload);
